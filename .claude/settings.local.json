@@ -6,7 +6,12 @@
       "Bash(mvn spring-boot:run -q)",
       "Bash(curl -s -X POST http://localhost:8080/api/user/login -H \"Content-Type: application/json\" -d '{\"username\":\"admin\",\"password\":\"admin123\"}')",
       "Bash(curl -s http://localhost:8080/api/elder/list -H 'Authorization: Bearer eyJhbGciOiJIUzUxMiJ9.eyJyb2xlIjoiYWRtaW4iLCJ1c2VySWQiOjEsInVzZXJuYW1lIjoiYWRtaW4iLCJzdWIiOiJhZG1pbiIsImlhdCI6MTc3Njk5Nzg5MiwiZXhwIjoxNzcwODQ0MjkyfQ.z6LF29IPjFOZCwWjTrMl5P1nWYdRb9pSvlS4UGno1hdQ2Nq5uO_SxWqi8L13vcOzyDRF9oMFaOB4PQLlbyxvvw')",
-      "Bash(curl -s http://localhost:8080/api/elder/list)"
+      "Bash(curl -s http://localhost:8080/api/elder/list)",
+      "Bash(mv controller/DataCollectionController.java modules/datacollection/controller/)",
+      "Bash(mv controller/ImageReportController.java modules/datacollection/controller/)",
+      "Bash(mv controller/SmartAssessmentController.java modules/datacollection/controller/)",
+      "Bash(mv controller/HealthQuestionnaireController.java modules/datacollection/controller/)",
+      "Bash(mv entity/ImageReport.java modules/datacollection/entity/)"
     ]
   }
 }

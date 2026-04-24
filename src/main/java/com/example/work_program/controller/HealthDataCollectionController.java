@@ -9,6 +9,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * 健康数据采集Controller (兼容旧接口，内部委托给modules/datacollection模块)
+ */
 @RestController
 @RequestMapping("/api/data")
 @LoginRequired

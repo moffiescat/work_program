@@ -1,121 +1,152 @@
--- AI+老年认知衰弱分级干预与智能管理系统 - 数据库初始化脚本
-
-CREATE DATABASE IF NOT EXISTS cognitive_health DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- 数据影像采集系统数据库更新脚本
+-- MySQL 5.7版本
 
 USE cognitive_health;
 
--- 用户表
-CREATE TABLE IF NOT EXISTS sys_user (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
-    password VARCHAR(100) NOT NULL COMMENT '密码',
-    real_name VARCHAR(50) COMMENT '真实姓名',
-    phone VARCHAR(20) COMMENT '手机号',
-    email VARCHAR(100) COMMENT '邮箱',
-    status INT DEFAULT 1 COMMENT '状态 0:禁用 1:正常',
-    role VARCHAR(20) COMMENT '角色 admin/doctor/nurse',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='系统用户表';
+-- 添加新字段（如果不存在则添加）
+SET @column_exists = 0;
+SELECT COUNT(*) INTO @column_exists
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'cognitive_health'
+AND TABLE_NAME = 'health_data_collection'
+AND COLUMN_NAME = 'report_no';
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE health_data_collection ADD COLUMN report_no VARCHAR(50) COMMENT "报告编号" AFTER data_type',
+    'SELECT "Column report_no already exists"');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
--- 老年人健康档案表
-CREATE TABLE IF NOT EXISTS elder_health_record (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(50) NOT NULL COMMENT '姓名',
-    gender VARCHAR(10) COMMENT '性别',
-    birth_date DATE COMMENT '出生日期',
-    id_card VARCHAR(20) UNIQUE COMMENT '身份证号',
-    phone VARCHAR(20) COMMENT '联系电话',
-    address VARCHAR(200) COMMENT '住址',
-    emergency_contact VARCHAR(50) COMMENT '紧急联系人',
-    emergency_phone VARCHAR(20) COMMENT '紧急联系电话',
-    medical_history TEXT COMMENT '既往病史',
-    family_history TEXT COMMENT '家族病史',
-    cognitive_baseline VARCHAR(20) COMMENT '认知基线',
-    risk_level VARCHAR(20) COMMENT '风险等级 normal/mild/moderate/severe',
-    status INT DEFAULT 1 COMMENT '状态 0:非活跃 1:活跃',
-    create_by VARCHAR(50) COMMENT '创建人',
-    update_by VARCHAR(50) COMMENT '更新人',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='老年人健康档案表';
+SET @column_exists = 0;
+SELECT COUNT(*) INTO @column_exists
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'cognitive_health'
+AND TABLE_NAME = 'health_data_collection'
+AND COLUMN_NAME = 'institution';
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE health_data_collection ADD COLUMN institution VARCHAR(100) COMMENT "检测机构"',
+    'SELECT "Column institution already exists"');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
--- 认知评估记录表
-CREATE TABLE IF NOT EXISTS cognitive_assessment (
+SET @column_exists = 0;
+SELECT COUNT(*) INTO @column_exists
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'cognitive_health'
+AND TABLE_NAME = 'health_data_collection'
+AND COLUMN_NAME = 'doctor_name';
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE health_data_collection ADD COLUMN doctor_name VARCHAR(50) COMMENT "诊断医生"',
+    'SELECT "Column doctor_name already exists"');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @column_exists = 0;
+SELECT COUNT(*) INTO @column_exists
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'cognitive_health'
+AND TABLE_NAME = 'health_data_collection'
+AND COLUMN_NAME = 'diagnosis_date';
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE health_data_collection ADD COLUMN diagnosis_date DATE COMMENT "诊断日期"',
+    'SELECT "Column diagnosis_date already exists"');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @column_exists = 0;
+SELECT COUNT(*) INTO @column_exists
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'cognitive_health'
+AND TABLE_NAME = 'health_data_collection'
+AND COLUMN_NAME = 'examination_items';
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE health_data_collection ADD COLUMN examination_items TEXT COMMENT "检查项目"',
+    'SELECT "Column examination_items already exists"');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @column_exists = 0;
+SELECT COUNT(*) INTO @column_exists
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'cognitive_health'
+AND TABLE_NAME = 'health_data_collection'
+AND COLUMN_NAME = 'image_thumb_url';
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE health_data_collection ADD COLUMN image_thumb_url VARCHAR(500) COMMENT "影像缩略图URL"',
+    'SELECT "Column image_thumb_url already exists"');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+SET @column_exists = 0;
+SELECT COUNT(*) INTO @column_exists
+FROM information_schema.COLUMNS
+WHERE TABLE_SCHEMA = 'cognitive_health'
+AND TABLE_NAME = 'health_data_collection'
+AND COLUMN_NAME = 'report_status';
+SET @sql = IF(@column_exists = 0,
+    'ALTER TABLE health_data_collection ADD COLUMN report_status VARCHAR(20) DEFAULT "pending" COMMENT "报告状态"',
+    'SELECT "Column report_status already exists"');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- 创建影像报告详情表
+CREATE TABLE IF NOT EXISTS image_report (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    collection_id BIGINT NOT NULL COMMENT '采集记录ID',
     elder_id BIGINT NOT NULL COMMENT '老人ID',
-    assessment_type VARCHAR(50) COMMENT '评估类型',
+    image_type VARCHAR(50) NOT NULL COMMENT '影像类型 ct/mri/xray/ultrasound/other',
+    image_url VARCHAR(500) NOT NULL COMMENT '影像URL',
+    thumb_url VARCHAR(500) COMMENT '缩略图URL',
+    report_no VARCHAR(50) COMMENT '报告编号',
+    institution VARCHAR(100) COMMENT '检测机构',
+    doctor_name VARCHAR(50) COMMENT '阅片医生',
+    diagnosis_date DATE COMMENT '诊断日期',
+    diagnosis_result TEXT COMMENT '诊断结果',
+    diagnosis_description TEXT COMMENT '诊断描述',
+    abnormal_indicators TEXT COMMENT '异常指标',
+    upload_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
+    INDEX idx_elder_id (elder_id),
+    INDEX idx_collection_id (collection_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='影像报告详情表';
+
+-- 创建智能评估记录表
+CREATE TABLE IF NOT EXISTS smart_assessment (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    collection_id BIGINT NOT NULL COMMENT '采集记录ID',
+    elder_id BIGINT NOT NULL COMMENT '老人ID',
+    assessment_type VARCHAR(50) NOT NULL COMMENT '评估类型 cognitive/motor/vital',
+    assessment_items TEXT COMMENT '评估项目(JSON格式)',
     total_score INT COMMENT '总分',
-    risk_level VARCHAR(20) COMMENT '风险等级',
+    score_level VARCHAR(20) COMMENT '得分等级 normal/mild/moderate/severe',
     assessment_result TEXT COMMENT '评估结果',
     recommendations TEXT COMMENT '建议',
     assessor VARCHAR(50) COMMENT '评估人',
-    assessment_place VARCHAR(100) COMMENT '评估地点',
+    assessment_device VARCHAR(100) COMMENT '评估设备',
     assessment_time DATETIME COMMENT '评估时间',
-    next_assessment_date DATE COMMENT '下次评估日期',
-    remark TEXT COMMENT '备注',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (elder_id) REFERENCES elder_health_record(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='认知评估记录表';
+    INDEX idx_elder_id (elder_id),
+    INDEX idx_collection_id (collection_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='智能评估记录表';
 
--- 干预计划表
-CREATE TABLE IF NOT EXISTS intervention_plan (
+-- 创建健康问询记录表
+CREATE TABLE IF NOT EXISTS health_questionnaire (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    collection_id BIGINT NOT NULL COMMENT '采集记录ID',
     elder_id BIGINT NOT NULL COMMENT '老人ID',
-    plan_name VARCHAR(100) NOT NULL COMMENT '计划名称',
-    plan_type VARCHAR(50) COMMENT '计划类型 cognitive/lifestyle/rehabilitation',
-    risk_level VARCHAR(20) COMMENT '风险等级',
-    cognitive_training TEXT COMMENT '认知训练内容',
-    lifestyle_intervention TEXT COMMENT '生活方式干预',
-    rehabilitation_plan TEXT COMMENT '康复计划',
-    goals TEXT COMMENT '目标',
-    start_date DATE COMMENT '开始日期',
-    end_date DATE COMMENT '结束日期',
-    responsible_doctor VARCHAR(50) COMMENT '负责人',
-    status INT DEFAULT 0 COMMENT '状态 0:待执行 1:进行中 2:已完成 3:已暂停',
-    remark TEXT COMMENT '备注',
+    questionnaire_type VARCHAR(50) NOT NULL COMMENT '问询类型 medical/family/lifestyle/symptom',
+    questions TEXT NOT NULL COMMENT '问题内容(JSON格式问题数组)',
+    answers TEXT NOT NULL COMMENT '回答内容(JSON格式回答数组)',
+    risk_factors TEXT COMMENT '风险因素分析',
+    summary TEXT COMMENT '问询摘要',
+    surveyor VARCHAR(50) COMMENT '调查员',
+    survey_time DATETIME COMMENT '问询时间',
     create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (elder_id) REFERENCES elder_health_record(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='干预计划表';
-
--- 干预执行记录表
-CREATE TABLE IF NOT EXISTS intervention_execution (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    plan_id BIGINT COMMENT '计划ID',
-    elder_id BIGINT NOT NULL COMMENT '老人ID',
-    execution_type VARCHAR(50) COMMENT '执行类型',
-    content TEXT COMMENT '执行内容',
-    execution_date DATE COMMENT '执行日期',
-    duration INT COMMENT '持续时间(分钟)',
-    effect_evaluation TEXT COMMENT '效果评价',
-    evaluator VARCHAR(50) COMMENT '评价人',
-    remark TEXT COMMENT '备注',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (plan_id) REFERENCES intervention_plan(id),
-    FOREIGN KEY (elder_id) REFERENCES elder_health_record(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='干预执行记录表';
-
--- 健康数据采集表
-CREATE TABLE IF NOT EXISTS health_data_collection (
-    id BIGINT AUTO_INCREMENT PRIMARY KEY,
-    elder_id BIGINT NOT NULL COMMENT '老人ID',
-    data_source VARCHAR(50) COMMENT '数据来源 smart/questionnaire/image',
-    data_type VARCHAR(50) COMMENT '数据类型',
-    data_content TEXT COMMENT '数据内容',
-    attachment_url VARCHAR(500) COMMENT '附件URL',
-    collection_date DATE COMMENT '采集日期',
-    collector VARCHAR(50) COMMENT '采集人',
-    remark TEXT COMMENT '备注',
-    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (elder_id) REFERENCES elder_health_record(id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='健康数据采集表';
-
--- 插入默认管理员账户
-INSERT INTO sys_user (username, password, real_name, role, status) VALUES
-('admin', 'admin123', '系统管理员', 'admin', 1),
-('doctor1', 'doctor123', '张医生', 'doctor', 1),
-('nurse1', 'nurse123', '李护士', 'nurse', 1);
+    INDEX idx_elder_id (elder_id),
+    INDEX idx_collection_id (collection_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='健康问询记录表';
